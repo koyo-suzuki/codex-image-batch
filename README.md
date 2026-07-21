@@ -1,5 +1,7 @@
 # Codex Image Batch
 
+[![CI](https://github.com/koyo-suzuki/codex-image-batch/actions/workflows/ci.yml/badge.svg)](https://github.com/koyo-suzuki/codex-image-batch/actions/workflows/ci.yml)
+
 Codex内蔵の画像生成を使い、複数のプロンプトや参照画像をまとめて処理するCodexプラグインです。APIキーは不要で、ChatGPT/Codexの利用枠を使います。
 
 - 1ウェーブ最大10件の画像生成・編集
@@ -136,6 +138,7 @@ python3 skills/generate-image-batch/scripts/prepare_jobs.py --config jobs.json
 
 ```bash
 python3 -m unittest discover -s tests -v
+python3 scripts/validate_release.py
 cd ui
 npm ci
 npm test

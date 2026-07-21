@@ -4,6 +4,7 @@ IssueやPull Requestを歓迎します。変更前に次を確認してくださ
 
 ```bash
 python3 -m unittest discover -s tests -v
+python3 scripts/validate_release.py
 cd ui
 npm ci
 npm test
