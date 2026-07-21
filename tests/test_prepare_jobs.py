@@ -12,7 +12,7 @@ SPEC.loader.exec_module(MODULE)
 
 
 class PrepareJobsTest(unittest.TestCase):
-    def test_expands_variants_and_prompt(self):
+    def test_one_job_creates_one_output_and_prompt(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config = root / "jobs.json"
@@ -22,16 +22,22 @@ class PrepareJobsTest(unittest.TestCase):
                     {
                         "id": "商品 写真",
                         "prompt": "白背景の商品写真",
-                        "variants": 2,
                         "aspect_ratio": "2:3",
                         "avoid": ["文字"],
                     }
                 ],
             }
             result = MODULE.normalize_config(raw, config)
-            self.assertEqual([job["id"] for job in result["jobs"]], ["商品 写真-01", "商品 写真-02"])
-            self.assertTrue(result["jobs"][0]["output_path"].endswith("商品-写真-01.png"))
+            self.assertEqual([job["id"] for job in result["jobs"]], ["商品 写真"])
+            self.assertTrue(result["jobs"][0]["output_path"].endswith("商品-写真.png"))
             self.assertIn("target aspect ratio 2:3", result["jobs"][0]["tool_prompt"])
+
+    def test_rejects_variants_with_job_split_guidance(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "jobs.json"
+            raw = {"jobs": [{"id": "sample", "prompt": "sample", "variants": 2}]}
+            with self.assertRaisesRegex(MODULE.ConfigError, "プロンプトごとに jobs を分けて"):
+                MODULE.normalize_config(raw, config)
 
     def test_edit_requires_image(self):
         with tempfile.TemporaryDirectory() as directory:

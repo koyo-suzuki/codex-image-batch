@@ -1,7 +1,7 @@
 {
   "name": "codex-image-batch",
-  "version": "1.0.0",
-  "description": "Batch-generate or edit images with up to 10 concurrent Codex built-in image-generation calls and optional local reference images.",
+  "version": "1.1.0",
+  "description": "Run up to 10 independent image prompts concurrently with Codex built-in image generation and optional local reference images.",
   "author": {
     "name": "Koyo Suzuki",
     "url": "https://github.com/koyo-suzuki"
@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Codex Image Batch",
     "shortDescription": "参照画像つきの画像生成を最大10件ずつ一括実行します。",
-    "longDescription": "APIキーなしでCodex内蔵の画像生成を使い、複数プロンプト、案数、参照画像、画像編集をjobs.jsonからまとめて処理します。ローカル設定UIも同梱しています。",
+    "longDescription": "APIキーなしでCodex内蔵の画像生成を使い、1ジョブ1プロンプト1画像として最大10件ずつ並列処理します。参照画像、画像編集、ローカル設定UIにも対応しています。",
     "developerName": "Koyo Suzuki",
     "category": "Productivity",
     "capabilities": [

@@ -3,8 +3,7 @@
   "parallelism": 10,
   "defaults": {
     "mode": "generate",
-    "aspect_ratio": "2:3",
-    "variants": 1
+    "aspect_ratio": "2:3"
   },
   "jobs": [
     {

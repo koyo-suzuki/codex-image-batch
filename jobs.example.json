@@ -3,8 +3,7 @@
   "parallelism": 10,
   "defaults": {
     "mode": "generate",
-    "aspect_ratio": "1:1",
-    "variants": 1
+    "aspect_ratio": "1:1"
   },
   "jobs": [
     {
@@ -16,8 +15,47 @@
     {
       "id": "coffee-package",
       "prompt": "白い背景に置いたクラフト紙のコーヒーパッケージ。自然光の商品写真。",
-      "variants": 2,
       "avoid": ["ブランド名", "価格表示"]
+    },
+    {
+      "id": "moon-base",
+      "prompt": "月面に建つ研究基地。地球が空に見える。写実的なSF映画のワンシーン。",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": "japanese-garden",
+      "prompt": "雨上がりの日本庭園。苔、石灯籠、薄い霧。静かな朝の写真。",
+      "aspect_ratio": "3:2"
+    },
+    {
+      "id": "sneaker-ad",
+      "prompt": "白いスニーカーが空中に浮かぶ、鮮やかな青背景の商品広告。文字なし。",
+      "aspect_ratio": "4:5"
+    },
+    {
+      "id": "underwater-library",
+      "prompt": "海中にある巨大な図書館。窓の外をクジラが泳ぐ幻想的な光景。",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": "retro-robot",
+      "prompt": "1950年代風の丸い家庭用ロボット。パステルカラーのキッチン。",
+      "aspect_ratio": "1:1"
+    },
+    {
+      "id": "minimal-interior",
+      "prompt": "木と白を基調にしたミニマルなリビング。大きな窓と柔らかな自然光。",
+      "aspect_ratio": "3:2"
+    },
+    {
+      "id": "mountain-train",
+      "prompt": "雪山の谷を走る赤い列車。上空から見下ろした旅行写真。",
+      "aspect_ratio": "16:9"
+    },
+    {
+      "id": "fruit-poster",
+      "prompt": "色鮮やかな柑橘類を幾何学的に配置したポスター風ビジュアル。文字なし。",
+      "aspect_ratio": "2:3"
     }
   ]
 }

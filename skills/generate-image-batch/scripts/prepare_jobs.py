@@ -15,6 +15,7 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 VALID_MODES = {"generate", "edit"}
 ASPECT_RATIO = re.compile(r"^[1-9]\d*:[1-9]\d*$")
 UNSUPPORTED_API_FIELDS = {"mask", "model", "n", "output_format", "quality", "size"}
+UNSUPPORTED_BATCH_FIELDS = {"variants"}
 
 
 class ConfigError(ValueError):
@@ -68,16 +69,14 @@ def normalize_images(value: object, base_dir: Path, label: str) -> list[dict[str
     return images
 
 
-def variant_name(filename: str, index: int, variants: int) -> str:
+def validate_output_name(filename: str) -> str:
     file_path = Path(filename)
     require(file_path.name == filename, "output_name はフォルダを含まないファイル名にしてください。")
     require(file_path.suffix.lower() == ".png", "output_name は .png にしてください。")
-    if variants == 1:
-        return filename
-    return f"{file_path.stem}-{index:02d}.png"
+    return filename
 
 
-def build_prompt(job: dict[str, object], images: list[dict[str, str]], variant: int, variants: int) -> str:
+def build_prompt(job: dict[str, object], images: list[dict[str, str]]) -> str:
     lines = [
         f"Asset ID: {job['id']}",
         f"Mode: {job['mode']}",
@@ -94,8 +93,6 @@ def build_prompt(job: dict[str, object], images: list[dict[str, str]], variant: 
         lines.append(f"Constraints: {'; '.join(constraints)}")
     if avoid:
         lines.append(f"Avoid: {'; '.join(avoid)}")
-    if variants > 1:
-        lines.append(f"Variant: {variant} of {variants}; make this a distinct visual alternative while preserving all requirements")
     if job["mode"] == "edit":
         lines.append("Edit invariant: change only what the primary request names; preserve every other visible detail")
     return "\n".join(lines)
@@ -110,6 +107,8 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
     require(isinstance(jobs, list) and jobs, "jobs に1件以上のジョブを指定してください。")
     old_default_fields = UNSUPPORTED_API_FIELDS.intersection(defaults)
     require(not old_default_fields, f"API版の設定項目は使えません: {', '.join(sorted(old_default_fields))}")
+    old_batch_defaults = UNSUPPORTED_BATCH_FIELDS.intersection(defaults)
+    require(not old_batch_defaults, "variants は使わず、プロンプトごとに jobs を分けてください。")
 
     parallelism = raw.get("parallelism", 10)
     require(not isinstance(parallelism, bool) and isinstance(parallelism, int) and 1 <= parallelism <= 10, "parallelism は1〜10の整数にしてください。")
@@ -130,11 +129,12 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
         job = {**defaults, **item}
         old_job_fields = UNSUPPORTED_API_FIELDS.intersection(job)
         require(not old_job_fields, f"{label} にAPI版の設定項目があります: {', '.join(sorted(old_job_fields))}")
+        old_batch_fields = UNSUPPORTED_BATCH_FIELDS.intersection(job)
+        require(not old_batch_fields, f"{label}.variants は使わず、プロンプトごとに jobs を分けてください。")
 
         job_id = job.get("id")
         prompt = job.get("prompt")
         mode = job.get("mode", "generate")
-        variants = job.get("variants", 1)
         aspect_ratio = job.get("aspect_ratio")
 
         require(isinstance(job_id, str) and job_id.strip(), f"{label}.id を指定してください。")
@@ -142,7 +142,6 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
         ids.add(job_id)
         require(isinstance(prompt, str) and prompt.strip(), f"{label}.prompt を指定してください。")
         require(mode in VALID_MODES, f"{label}.mode は generate/edit のいずれかにしてください。")
-        require(not isinstance(variants, bool) and isinstance(variants, int) and 1 <= variants <= 10, f"{label}.variants は1〜10の整数にしてください。")
         if aspect_ratio is not None:
             require(isinstance(aspect_ratio, str) and ASPECT_RATIO.fullmatch(aspect_ratio), f"{label}.aspect_ratio は 1:1 や 16:9 の形式にしてください。")
 
@@ -151,8 +150,9 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
         constraints = normalize_string_list(job.get("constraints"), f"{label}.constraints")
         avoid = normalize_string_list(job.get("avoid"), f"{label}.avoid")
 
-        base_output_name = job.get("output_name", f"{safe_id(job_id)}.png")
-        require(isinstance(base_output_name, str) and base_output_name.strip(), f"{label}.output_name を文字列で指定してください。")
+        output_name = job.get("output_name", f"{safe_id(job_id)}.png")
+        require(isinstance(output_name, str) and output_name.strip(), f"{label}.output_name を文字列で指定してください。")
+        output_name = validate_output_name(output_name)
 
         normalized_job = {
             "id": job_id.strip(),
@@ -163,24 +163,19 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
             "avoid": avoid,
         }
 
-        for variant in range(1, variants + 1):
-            output_name = variant_name(base_output_name, variant, variants)
-            output_path = (output_dir / output_name).resolve()
-            require(str(output_path) not in output_paths, f"出力先が重複しています: {output_path}")
-            output_paths.add(str(output_path))
-            exists = output_path.exists()
-            variant_id = job_id.strip() if variants == 1 else f"{job_id.strip()}-{variant:02d}"
-            expanded = {
-                "id": variant_id,
-                "source_id": job_id.strip(),
-                "mode": mode,
-                "images": images,
-                "output_path": str(output_path),
-                "status": "ready" if force or not exists else "skipped",
-                "skip_reason": None if force or not exists else "output_exists",
-            }
-            expanded["tool_prompt"] = build_prompt(normalized_job, images, variant, variants)
-            normalized.append(expanded)
+        output_path = (output_dir / output_name).resolve()
+        require(str(output_path) not in output_paths, f"出力先が重複しています: {output_path}")
+        output_paths.add(str(output_path))
+        exists = output_path.exists()
+        normalized.append({
+            "id": job_id.strip(),
+            "mode": mode,
+            "images": images,
+            "output_path": str(output_path),
+            "status": "ready" if force or not exists else "skipped",
+            "skip_reason": None if force or not exists else "output_exists",
+            "tool_prompt": build_prompt(normalized_job, images),
+        })
 
     ready_jobs = [job for job in normalized if job["status"] == "ready"]
     waves = [

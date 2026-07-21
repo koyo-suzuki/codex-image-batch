@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useRef, useState } from "react";
 
 type LocalFileHandle = {
   getFile(): Promise<File>;
@@ -33,7 +33,6 @@ type Job = {
   mode: "generate" | "edit";
   prompt: string;
   aspectRatio: string;
-  variants: number;
   outputName: string;
   constraints: string;
   avoid: string;
@@ -53,7 +52,6 @@ function newJob(index: number): Job {
     mode: "generate",
     prompt: "",
     aspectRatio: "1:1",
-    variants: 1,
     outputName: "",
     constraints: "",
     avoid: "文字、ロゴ、透かし",
@@ -61,21 +59,7 @@ function newJob(index: number): Job {
   };
 }
 
-const initialJobs: Job[] = [
-  {
-    ...newJob(1),
-    id: "neon-cat",
-    prompt: "ネオン街を歩く白い猫。映画的な写真。雨上がりの路面反射。",
-    aspectRatio: "3:2",
-  },
-  {
-    ...newJob(2),
-    id: "coffee-package",
-    prompt: "白い背景に置いたクラフト紙のコーヒーパッケージ。自然光の商品写真。",
-    variants: 2,
-    avoid: "ブランド名、価格表示、透かし",
-  },
-];
+const initialJobs: Job[] = [newJob(1)];
 
 function splitList(value: string) {
   return value
@@ -93,13 +77,17 @@ function toUiJobs(raw: unknown): Job[] {
     throw new Error("jobs配列が見つかりません");
   }
 
-  return (raw as { jobs: Array<Record<string, unknown>> }).jobs.map((item, index) => ({
+  const rawJobs = (raw as { jobs: Array<Record<string, unknown>> }).jobs;
+  if (rawJobs.some((item) => Object.hasOwn(item, "variants"))) {
+    throw new Error("案数は廃止しました。1プロンプトごとに1件のjobへ分けてください");
+  }
+
+  return rawJobs.map((item, index) => ({
     key: uid(),
     id: typeof item.id === "string" ? item.id : `image-${index + 1}`,
     mode: item.mode === "edit" ? "edit" : "generate",
     prompt: typeof item.prompt === "string" ? item.prompt : "",
     aspectRatio: typeof item.aspect_ratio === "string" ? item.aspect_ratio : "1:1",
-    variants: typeof item.variants === "number" ? item.variants : 1,
     outputName: typeof item.output_name === "string" ? item.output_name : "",
     constraints: Array.isArray(item.constraints) ? item.constraints.join("、") : "",
     avoid: Array.isArray(item.avoid) ? item.avoid.join("、") : "",
@@ -119,12 +107,13 @@ function toUiJobs(raw: unknown): Job[] {
 export function BatchBuilder() {
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [parallelism, setParallelism] = useState(10);
+  const [bulkPrompts, setBulkPrompts] = useState("");
   const [directory, setDirectory] = useState<LocalDirectoryHandle | null>(null);
   const [notice, setNotice] = useState("まずは内容を整えて、制作フォルダへ保存します");
   const [busy, setBusy] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const outputCount = useMemo(() => jobs.reduce((sum, job) => sum + job.variants, 0), [jobs]);
+  const outputCount = jobs.length;
   const waves = Math.max(1, Math.ceil(outputCount / parallelism));
 
   function updateJob(key: string, patch: Partial<Job>) {
@@ -139,8 +128,28 @@ export function BatchBuilder() {
       ids.add(job.id.trim());
       if (!job.prompt.trim()) throw new Error(`「${job.id}」のプロンプトが空です`);
       if (job.mode === "edit" && job.images.length === 0) throw new Error(`「${job.id}」の編集対象画像がありません`);
-      if (job.variants < 1 || job.variants > 10) throw new Error(`「${job.id}」の案数は1〜10にしてください`);
     }
+  }
+
+  function prepareTenJobs() {
+    setJobs((current) => {
+      if (current.length >= 10) return current;
+      return [
+        ...current,
+        ...Array.from({ length: 10 - current.length }, (_, index) => newJob(current.length + index + 1)),
+      ];
+    });
+    setNotice("10個のプロンプト入力欄を用意しました。1欄から1画像を生成します");
+  }
+
+  function applyBulkPrompts() {
+    const prompts = bulkPrompts.split(/\n+/).map((value) => value.trim()).filter(Boolean);
+    if (!prompts.length) {
+      setNotice("プロンプトを1行に1件ずつ入力してください");
+      return;
+    }
+    setJobs(prompts.map((prompt, index) => ({ ...newJob(index + 1), prompt })));
+    setNotice(`${prompts.length}個のプロンプトを${prompts.length}件のジョブに変換しました`);
   }
 
   async function connectFolder() {
@@ -211,7 +220,6 @@ export function BatchBuilder() {
         mode: job.mode,
         prompt: job.prompt.trim(),
         aspect_ratio: job.aspectRatio,
-        variants: job.variants,
         ...(job.outputName.trim() ? { output_name: job.outputName.trim() } : {}),
         ...(images.length ? { images } : {}),
         ...(splitList(job.constraints).length ? { constraints: splitList(job.constraints) } : {}),
@@ -265,7 +273,7 @@ export function BatchBuilder() {
   }
 
   async function copyCommand() {
-    await navigator.clipboard.writeText("$generate-image-batch で jobs.json を一括生成して");
+    await navigator.clipboard.writeText("$generate-image-batch で jobs.json の各プロンプトを最大10件並列で生成して");
     setNotice("Codexへの実行文をコピーしました");
   }
 
@@ -288,12 +296,12 @@ export function BatchBuilder() {
       <section className="overview-card">
         <div className="overview-copy">
           <p className="section-kicker">BATCH OVERVIEW</p>
-          <h2>最大10件を同時に。<br />残りは自動で次の波へ。</h2>
-          <p>Codex内蔵の画像生成を1ウェーブ最大10件まとめて呼び出します。案数も1件として数え、混雑時はサービス側で待機する場合があります。</p>
+          <h2>10個のプロンプトを、<br />10件のジョブとして同時開始。</h2>
+          <p>1プロンプト＝1画像です。最大10個ずつCodex内蔵の画像生成をまとめて呼び出し、11個目以降は次のウェーブへ送ります。</p>
         </div>
         <div className="metrics">
           <div className="metric"><strong>{jobs.length}</strong><span>プロンプト</span></div>
-          <div className="metric accent"><strong>{outputCount}</strong><span>生成画像</span></div>
+          <div className="metric accent"><strong>{outputCount}</strong><span>実行ジョブ</span></div>
           <div className="metric"><strong>{waves}</strong><span>実行ウェーブ</span></div>
         </div>
         <div className="parallel-control">
@@ -311,6 +319,7 @@ export function BatchBuilder() {
 
       <section className="actionbar" aria-label="設定操作">
         <button className="button primary" onClick={connectFolder}>制作フォルダを接続</button>
+        <button className="button" onClick={prepareTenJobs}>10件の入力欄を用意</button>
         <button className="button" onClick={() => importRef.current?.click()}>JSONを読み込む</button>
         <input ref={importRef} type="file" accept="application/json,.json" hidden onChange={importConfig} />
         <span className="action-spacer" />
@@ -318,10 +327,29 @@ export function BatchBuilder() {
         <button className="button save" disabled={busy} onClick={saveConfig}>{busy ? "保存中…" : directory ? "フォルダへ保存" : "JSONを保存"}</button>
       </section>
 
+      <section className="bulk-entry">
+        <div className="bulk-copy">
+          <p className="section-kicker">QUICK INPUT</p>
+          <h2>プロンプトをまとめて貼る</h2>
+          <p>1行が1プロンプト、1画像になります。10行なら10件を同じウェーブで開始します。</p>
+        </div>
+        <div className="bulk-field">
+          <textarea
+            value={bulkPrompts}
+            onChange={(event) => setBulkPrompts(event.target.value)}
+            placeholder={"白背景の商品写真\n夜のネオン街を歩く白猫\n海辺に建つ未来的なホテル"}
+          />
+          <button className="button primary" onClick={applyBulkPrompts}>行ごとにジョブを作る</button>
+        </div>
+      </section>
+
       <section className="jobs-section">
         <div className="section-heading">
-          <div><p className="section-kicker">PROMPT JOBS</p><h2>生成する画像</h2></div>
-          <button className="add-button" onClick={() => setJobs((current) => [...current, newJob(current.length + 1)])}>＋ ジョブを追加</button>
+          <div><p className="section-kicker">PROMPT JOBS</p><h2>1カード＝1プロンプト＝1画像</h2></div>
+          <div className="section-actions">
+            <button className="add-button" onClick={prepareTenJobs}>10件まで追加</button>
+            <button className="add-button" onClick={() => setJobs((current) => [...current, newJob(current.length + 1)])}>＋ 1件追加</button>
+          </div>
         </div>
 
         <div className="job-list">
@@ -341,12 +369,11 @@ export function BatchBuilder() {
                 </div>
 
                 <div className="form-grid compact-grid">
-                  <label><span>管理ID</span><input value={job.id} onChange={(event) => updateJob(job.key, { id: event.target.value })} placeholder="product-poster" /></label>
-                  <label><span>案数</span><input type="number" min="1" max="10" value={job.variants} onChange={(event) => updateJob(job.key, { variants: Math.max(1, Math.min(10, Number(event.target.value))) })} /></label>
+                  <label><span>ファイルID</span><input value={job.id} onChange={(event) => updateJob(job.key, { id: event.target.value })} placeholder="product-poster" /></label>
                   <label><span>出力名 <small>任意</small></span><input value={job.outputName} onChange={(event) => updateJob(job.key, { outputName: event.target.value })} placeholder={`${safeFilename(job.id)}.png`} /></label>
                 </div>
 
-                <label className="prompt-field"><span>プロンプト</span><textarea value={job.prompt} onChange={(event) => updateJob(job.key, { prompt: event.target.value })} placeholder="何を、どんな構図・雰囲気で作るかを書いてください" /></label>
+                <label className="prompt-field"><span>この1画像のプロンプト</span><textarea value={job.prompt} onChange={(event) => updateJob(job.key, { prompt: event.target.value })} placeholder="何を、どんな構図・雰囲気で作るかを書いてください" /></label>
 
                 <div className="ratio-row">
                   <span>縦横比</span>

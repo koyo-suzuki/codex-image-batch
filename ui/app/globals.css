@@ -58,9 +58,16 @@ h1 { margin-bottom: 0; font-size: 22px; letter-spacing: -.03em; }
 .button.primary { border-color: var(--ink); background: var(--ink); color: white; }
 .button.save { border-color: var(--accent); background: var(--accent); color: white; }
 
-.jobs-section { margin-top: 22px; }
+.bulk-entry { display: grid; grid-template-columns: .8fr 1.2fr; gap: 28px; margin-top: 10px; padding: 26px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); box-shadow: 0 10px 32px rgba(31,39,49,.045); }
+.bulk-copy h2 { margin-bottom: 8px; font-size: 24px; letter-spacing: -.04em; }
+.bulk-copy p:last-child { margin-bottom: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.bulk-field { display: grid; gap: 10px; }
+.bulk-field textarea { min-height: 132px; }
+.bulk-field .button { justify-self: end; }
+.jobs-section { margin-top: 28px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; margin-bottom: 15px; }
 .section-heading h2 { margin: 0; font-size: 25px; letter-spacing: -.04em; }
+.section-actions { display: flex; gap: 8px; }
 .add-button { color: var(--accent-dark); border-color: rgba(242,99,54,.3); }
 .job-list { display: grid; gap: 18px; }
 .job-card { display: grid; grid-template-columns: 74px 1fr; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 10px 32px rgba(31,39,49,.045); overflow: hidden; }
@@ -75,7 +82,7 @@ h1 { margin-bottom: 0; font-size: 22px; letter-spacing: -.03em; }
 .job-actions button { color: var(--muted); font-size: 12px; font-weight: 700; }
 .job-actions button:hover { color: var(--accent-dark); }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
-.compact-grid { grid-template-columns: 1fr 100px 1fr; margin-top: 0; }
+.compact-grid { grid-template-columns: 1fr 1fr; margin-top: 0; }
 label span, .ratio-row > span, .reference-heading span { display: block; margin-bottom: 7px; color: #4e5966; font-size: 12px; font-weight: 800; }
 label small { color: #949ba3; font-weight: 500; }
 input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 11px; outline: none; background: white; color: var(--ink); transition: border .18s, box-shadow .18s; }
@@ -121,6 +128,7 @@ input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px
   .actionbar { flex-wrap: wrap; }
   .action-spacer { display: none; }
   .actionbar .button { flex: 1 1 46%; }
+  .bulk-entry { grid-template-columns: 1fr; }
   .job-card { grid-template-columns: 44px 1fr; }
   .job-content { padding: 18px 14px; }
   .compact-grid, .form-grid { grid-template-columns: 1fr; }
@@ -143,6 +151,7 @@ input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px
   .segmented { width: 100%; }
   .segmented button { flex: 1; }
   .section-heading { align-items: flex-start; gap: 12px; }
+  .section-actions { flex-direction: column; }
   .add-button { padding: 0 11px; }
   .job-index { padding-top: 25px; font-size: 11px; }
   .mode-switch button { padding: 7px 9px; }
