@@ -20,4 +20,4 @@ npm test
 npm run lint
 ```
 
-詳しい使い方とCodexプラグインの導入方法は、リポジトリ直下の`README.md`を参照してください。
+詳しい画面操作は[`docs/WEB_UI_GUIDE.md`](../docs/WEB_UI_GUIDE.md)、Codexプラグインの導入方法はリポジトリ直下の[`README.md`](../README.md)を参照してください。
