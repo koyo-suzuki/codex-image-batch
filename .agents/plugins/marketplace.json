@@ -1,0 +1,20 @@
+{
+  "name": "codex-image-batch",
+  "interface": {
+    "displayName": "Codex Image Batch"
+  },
+  "plugins": [
+    {
+      "name": "codex-image-batch",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

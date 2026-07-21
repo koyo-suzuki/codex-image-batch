@@ -1,0 +1,39 @@
+{
+  "name": "codex-image-batch",
+  "version": "1.0.0",
+  "description": "Batch-generate or edit images with up to 10 concurrent Codex built-in image-generation calls and optional local reference images.",
+  "author": {
+    "name": "Koyo Suzuki",
+    "url": "https://github.com/koyo-suzuki"
+  },
+  "homepage": "https://github.com/koyo-suzuki/codex-image-batch#readme",
+  "repository": "https://github.com/koyo-suzuki/codex-image-batch",
+  "license": "MIT",
+  "keywords": [
+    "image-generation",
+    "batch",
+    "parallel",
+    "codex",
+    "no-api-key"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Image Batch",
+    "shortDescription": "参照画像つきの画像生成を最大10件ずつ一括実行します。",
+    "longDescription": "APIキーなしでCodex内蔵の画像生成を使い、複数プロンプト、案数、参照画像、画像編集をjobs.jsonからまとめて処理します。ローカル設定UIも同梱しています。",
+    "developerName": "Koyo Suzuki",
+    "category": "Productivity",
+    "capabilities": [
+      "Image generation",
+      "Batch workflow",
+      "Local reference images"
+    ],
+    "websiteURL": "https://github.com/koyo-suzuki/codex-image-batch",
+    "defaultPrompt": [
+      "$generate-image-batch で jobs.json を一括生成して",
+      "画像一括生成の設定UIを開いて",
+      "参照画像つきのjobs.jsonを作って"
+    ],
+    "brandColor": "#F97316"
+  }
+}

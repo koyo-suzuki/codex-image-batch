@@ -1,0 +1,27 @@
+{
+  "output_dir": "outputs",
+  "parallelism": 10,
+  "defaults": {
+    "mode": "generate",
+    "aspect_ratio": "2:3",
+    "variants": 1
+  },
+  "jobs": [
+    {
+      "id": "product-poster",
+      "prompt": "参照画像の商品とロゴを使い、余白を活かした高級感のある縦長広告ビジュアルを作る。商品の形状とロゴは正確に保つ。",
+      "images": [
+        { "path": "references/product.png", "role": "商品の形状・色を保つ参照画像" },
+        { "path": "references/logo.png", "role": "ロゴの綴りと形状を保つ参照画像" }
+      ],
+      "constraints": ["商品を主役にする", "ロゴを改変しない"]
+    },
+    {
+      "id": "background-edit",
+      "mode": "edit",
+      "prompt": "背景だけを明るい青空に変更する。",
+      "images": [{ "path": "references/source.png", "role": "編集対象" }],
+      "constraints": ["人物・服装・ポーズ・構図は変更しない"]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "画像一括生成"
+  short_description: "複数プロンプトと参照画像をCodex内蔵機能で一括生成"
+  default_prompt: "Use $generate-image-batch to process jobs.json with built-in image generation and save every output."

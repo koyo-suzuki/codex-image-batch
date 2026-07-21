@@ -1,0 +1,23 @@
+{
+  "output_dir": "outputs",
+  "parallelism": 10,
+  "defaults": {
+    "mode": "generate",
+    "aspect_ratio": "1:1",
+    "variants": 1
+  },
+  "jobs": [
+    {
+      "id": "neon-cat",
+      "prompt": "ネオン街を歩く白い猫。映画的な写真。雨上がりの路面反射。文字やロゴは入れない。",
+      "aspect_ratio": "3:2",
+      "avoid": ["文字", "ロゴ", "透かし"]
+    },
+    {
+      "id": "coffee-package",
+      "prompt": "白い背景に置いたクラフト紙のコーヒーパッケージ。自然光の商品写真。",
+      "variants": 2,
+      "avoid": ["ブランド名", "価格表示"]
+    }
+  ]
+}
