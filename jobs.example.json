@@ -1,6 +1,6 @@
 {
   "output_dir": "outputs",
-  "parallelism": 10,
+  "parallelism": 100,
   "defaults": {
     "mode": "generate",
     "aspect_ratio": "1:1"

@@ -34,7 +34,7 @@ def main() -> int:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
     require(manifest.get("name") == PLUGIN_NAME, "plugin name mismatch")
-    require(manifest.get("version") == "1.1.0", "unexpected plugin version")
+    require(manifest.get("version") == "1.2.0", "unexpected plugin version")
     require(manifest.get("skills") == "./skills/", "skill directory is not exported")
     require(skill_path.is_file(), "skill entrypoint is missing")
 
@@ -44,11 +44,12 @@ def main() -> int:
     require(plugins[0].get("name") == PLUGIN_NAME, "marketplace plugin mismatch")
     require(plugins[0].get("source", {}).get("path") == "./", "marketplace must install the repository root")
 
-    require(example.get("parallelism") == 10, "example must default to 10-way execution")
+    require(example.get("parallelism") == 100, "example must default to 100-way burst execution")
     require(len(example.get("jobs", [])) == 10, "example must contain 10 independent prompts")
     require(all("variants" not in job for job in example["jobs"]), "example must not use variants")
     require("one prompt and one output image" in skill, "skill is missing the one-prompt contract")
-    require("1 through 10" in skill, "skill is missing the 10-way concurrency contract")
+    require("1 through 100" in skill, "skill is missing the 100-way concurrency contract")
+    require("wave.map" in skill and "wave_dispatched" in skill, "skill is missing the burst-start invariant")
     require("Promise.allSettled" in skill, "skill is missing bounded async orchestration")
     require("tools.image_gen__imagegen" in skill, "skill is not wired to built-in image generation")
 
@@ -57,7 +58,7 @@ def main() -> int:
     require(install_source in readme and install_plugin in readme, "README install commands are missing")
     require((ROOT / "LICENSE").is_file(), "LICENSE is missing")
 
-    print("Release validation passed: plugin, marketplace, 10-way orchestration, README")
+    print("Release validation passed: plugin, marketplace, 100-way burst orchestration, README")
     return 0
 
 

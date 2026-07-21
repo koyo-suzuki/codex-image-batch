@@ -18,7 +18,8 @@ test("renders the batch image builder", async () => {
   const html = await response.text();
   assert.match(html, /<title>画像一括生成ビルダー<\/title>/);
   assert.match(html, /画像一括生成ビルダー/);
-  assert.match(html, /10個のプロンプトを/);
+  assert.match(html, /100個のプロンプトを/);
+  assert.match(html, /100件のburstで一斉投入/);
   assert.match(html, /1カード＝1プロンプト＝1画像/);
   assert.match(html, /行ごとにジョブを作る/);
   assert.doesNotMatch(html, /案数/);

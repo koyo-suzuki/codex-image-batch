@@ -106,7 +106,7 @@ function toUiJobs(raw: unknown): Job[] {
 
 export function BatchBuilder() {
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
-  const [parallelism, setParallelism] = useState(10);
+  const [parallelism, setParallelism] = useState(100);
   const [bulkPrompts, setBulkPrompts] = useState("");
   const [directory, setDirectory] = useState<LocalDirectoryHandle | null>(null);
   const [notice, setNotice] = useState("まずは内容を整えて、制作フォルダへ保存します");
@@ -131,15 +131,15 @@ export function BatchBuilder() {
     }
   }
 
-  function prepareTenJobs() {
+  function prepareHundredJobs() {
     setJobs((current) => {
-      if (current.length >= 10) return current;
+      if (current.length >= 100) return current;
       return [
         ...current,
-        ...Array.from({ length: 10 - current.length }, (_, index) => newJob(current.length + index + 1)),
+        ...Array.from({ length: 100 - current.length }, (_, index) => newJob(current.length + index + 1)),
       ];
     });
-    setNotice("10個のプロンプト入力欄を用意しました。1欄から1画像を生成します");
+    setNotice("100個のプロンプト入力欄を用意しました。1欄から1画像を生成します");
   }
 
   function applyBulkPrompts() {
@@ -167,7 +167,7 @@ export function BatchBuilder() {
         const raw = JSON.parse(await file.text());
         setJobs(toUiJobs(raw));
         const value = (raw as { parallelism?: unknown }).parallelism;
-        if (typeof value === "number" && value >= 1 && value <= 10) setParallelism(value);
+        if (typeof value === "number" && value >= 1 && value <= 100) setParallelism(value);
         setNotice(`「${handle.name}」の jobs.json を読み込みました`);
       } catch {
         setNotice(`「${handle.name}」へ接続しました。新しい jobs.json を作成できます`);
@@ -264,7 +264,7 @@ export function BatchBuilder() {
       const raw = JSON.parse(await file.text());
       setJobs(toUiJobs(raw));
       const value = (raw as { parallelism?: unknown }).parallelism;
-      if (typeof value === "number" && value >= 1 && value <= 10) setParallelism(value);
+      if (typeof value === "number" && value >= 1 && value <= 100) setParallelism(value);
       setNotice(`${file.name} を読み込みました`);
     } catch (error) {
       setNotice(`読み込み失敗: ${(error as Error).message}`);
@@ -273,7 +273,7 @@ export function BatchBuilder() {
   }
 
   async function copyCommand() {
-    await navigator.clipboard.writeText("$generate-image-batch で jobs.json の各プロンプトを最大10件並列で生成して");
+    await navigator.clipboard.writeText("$generate-image-batch で jobs.json の各プロンプトを最大100件のburstで一斉開始して");
     setNotice("Codexへの実行文をコピーしました");
   }
 
@@ -296,8 +296,8 @@ export function BatchBuilder() {
       <section className="overview-card">
         <div className="overview-copy">
           <p className="section-kicker">BATCH OVERVIEW</p>
-          <h2>10個のプロンプトを、<br />10件のジョブとして同時開始。</h2>
-          <p>1プロンプト＝1画像です。最大10個ずつCodex内蔵の画像生成をまとめて呼び出し、11個目以降は次のウェーブへ送ります。</p>
+          <h2>100個のプロンプトを、<br />100件のburstで一斉投入。</h2>
+          <p>1プロンプト＝1画像です。最大100件分の呼び出しを待機前にまとめて開始します。画像サービス側では混雑により順番待ちになる場合があります。</p>
         </div>
         <div className="metrics">
           <div className="metric"><strong>{jobs.length}</strong><span>プロンプト</span></div>
@@ -306,11 +306,11 @@ export function BatchBuilder() {
         </div>
         <div className="parallel-control">
           <div>
-            <label htmlFor="parallelism">同時実行数</label>
-            <p>1〜10件。おすすめは10</p>
+            <label htmlFor="parallelism">一斉投入数</label>
+            <p>1〜100件。100なら最大100件を先に一斉投入</p>
           </div>
           <div className="segmented" id="parallelism">
-            {[1, 3, 5, 10].map((value) => (
+            {[10, 25, 50, 100].map((value) => (
               <button key={value} className={parallelism === value ? "active" : ""} onClick={() => setParallelism(value)}>{value}</button>
             ))}
           </div>
@@ -319,7 +319,7 @@ export function BatchBuilder() {
 
       <section className="actionbar" aria-label="設定操作">
         <button className="button primary" onClick={connectFolder}>制作フォルダを接続</button>
-        <button className="button" onClick={prepareTenJobs}>10件の入力欄を用意</button>
+        <button className="button" onClick={prepareHundredJobs}>100件の入力欄を用意</button>
         <button className="button" onClick={() => importRef.current?.click()}>JSONを読み込む</button>
         <input ref={importRef} type="file" accept="application/json,.json" hidden onChange={importConfig} />
         <span className="action-spacer" />
@@ -331,7 +331,7 @@ export function BatchBuilder() {
         <div className="bulk-copy">
           <p className="section-kicker">QUICK INPUT</p>
           <h2>プロンプトをまとめて貼る</h2>
-          <p>1行が1プロンプト、1画像になります。10行なら10件を同じウェーブで開始します。</p>
+          <p>1行が1プロンプト、1画像になります。100行なら100件の呼び出しを同じburstで開始します。</p>
         </div>
         <div className="bulk-field">
           <textarea
@@ -347,7 +347,7 @@ export function BatchBuilder() {
         <div className="section-heading">
           <div><p className="section-kicker">PROMPT JOBS</p><h2>1カード＝1プロンプト＝1画像</h2></div>
           <div className="section-actions">
-            <button className="add-button" onClick={prepareTenJobs}>10件まで追加</button>
+            <button className="add-button" onClick={prepareHundredJobs}>100件まで追加</button>
             <button className="add-button" onClick={() => setJobs((current) => [...current, newJob(current.length + 1)])}>＋ 1件追加</button>
           </div>
         </div>

@@ -16,6 +16,8 @@ VALID_MODES = {"generate", "edit"}
 ASPECT_RATIO = re.compile(r"^[1-9]\d*:[1-9]\d*$")
 UNSUPPORTED_API_FIELDS = {"mask", "model", "n", "output_format", "quality", "size"}
 UNSUPPORTED_BATCH_FIELDS = {"variants"}
+MIN_PARALLELISM = 1
+MAX_PARALLELISM = 100
 
 
 class ConfigError(ValueError):
@@ -110,8 +112,13 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
     old_batch_defaults = UNSUPPORTED_BATCH_FIELDS.intersection(defaults)
     require(not old_batch_defaults, "variants は使わず、プロンプトごとに jobs を分けてください。")
 
-    parallelism = raw.get("parallelism", 10)
-    require(not isinstance(parallelism, bool) and isinstance(parallelism, int) and 1 <= parallelism <= 10, "parallelism は1〜10の整数にしてください。")
+    parallelism = raw.get("parallelism", MAX_PARALLELISM)
+    require(
+        not isinstance(parallelism, bool)
+        and isinstance(parallelism, int)
+        and MIN_PARALLELISM <= parallelism <= MAX_PARALLELISM,
+        f"parallelism は{MIN_PARALLELISM}〜{MAX_PARALLELISM}の整数にしてください。",
+    )
 
     base_dir = config_path.parent
     raw_output_dir = raw.get("output_dir", "outputs")
@@ -187,6 +194,8 @@ def normalize_config(raw: object, config_path: Path, force: bool = False) -> dic
         "config": str(config_path),
         "output_dir": str(output_dir),
         "parallelism": parallelism,
+        "dispatch_strategy": "burst",
+        "ready_count": len(ready_jobs),
         "force": force,
         "waves": waves,
         "jobs": normalized,

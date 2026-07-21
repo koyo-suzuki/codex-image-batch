@@ -91,32 +91,47 @@ class PrepareJobsTest(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.ConfigError, "同じフォルダ配下"):
                 MODULE.normalize_config(raw, config)
 
-    def test_accepts_ten_parallel_jobs(self):
+    def test_accepts_one_hundred_parallel_jobs(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "jobs.json"
-            raw = {"parallelism": 10, "jobs": [{"id": "sample", "prompt": "sample"}]}
+            raw = {"parallelism": 100, "jobs": [{"id": "sample", "prompt": "sample"}]}
             result = MODULE.normalize_config(raw, config)
-            self.assertEqual(result["parallelism"], 10)
+            self.assertEqual(result["parallelism"], 100)
+            self.assertEqual(result["dispatch_strategy"], "burst")
 
-    def test_rejects_more_than_ten_parallel_jobs(self):
+    def test_rejects_more_than_one_hundred_parallel_jobs(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "jobs.json"
-            raw = {"parallelism": 11, "jobs": [{"id": "sample", "prompt": "sample"}]}
-            with self.assertRaisesRegex(MODULE.ConfigError, "1〜10"):
+            raw = {"parallelism": 101, "jobs": [{"id": "sample", "prompt": "sample"}]}
+            with self.assertRaisesRegex(MODULE.ConfigError, "1〜100"):
                 MODULE.normalize_config(raw, config)
 
-    def test_builds_ten_job_waves(self):
+    def test_builds_one_hundred_job_burst(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "jobs.json"
             raw = {
-                "parallelism": 10,
+                "parallelism": 100,
                 "jobs": [
                     {"id": f"sample-{index}", "prompt": "sample"}
-                    for index in range(11)
+                    for index in range(100)
                 ],
             }
             result = MODULE.normalize_config(raw, config)
-            self.assertEqual([len(wave) for wave in result["waves"]], [10, 1])
+            self.assertEqual([len(wave) for wave in result["waves"]], [100])
+            self.assertEqual(result["ready_count"], 100)
+
+    def test_builds_second_wave_after_one_hundred_jobs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "jobs.json"
+            raw = {
+                "parallelism": 100,
+                "jobs": [
+                    {"id": f"sample-{index}", "prompt": "sample"}
+                    for index in range(101)
+                ],
+            }
+            result = MODULE.normalize_config(raw, config)
+            self.assertEqual([len(wave) for wave in result["waves"]], [100, 1])
 
 
 if __name__ == "__main__":
